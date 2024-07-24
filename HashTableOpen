@@ -1,0 +1,184 @@
+
+//// HASH TABLE CREATED FROM SCARTCH ////
+
+
+
+public interface KWHashMap<K, V> {
+
+  public V get(K key);
+
+  public V put(K key, V value);
+
+  public boolean isEmpty();
+
+  public V remove(K key);
+
+  public int size();
+
+}
+
+
+//place holder K and V
+public class HashTableOpen<K, V> implements KWHashMap<K, V>  {
+  private static final double LOAD_THRESHOLD = 0.75;
+  private final Entry<K,V> DELETED = new Entry<K,V>(null,null);
+
+  //DATA FIELDS
+  private Entry<K,V>[] table; //array collects Entry type objects
+  private int start_capacity = 5;
+  private double loadFactor;
+  private int numkeys;
+  private int numDeletes;
+
+  //CONSTRUCTORS///
+
+  public HashTableOpen(int capacity) {
+   
+    table = new Entry[capacity];
+  }
+
+  public HashTableOpen() {
+    table = new Entry[this.start_capacity];
+  }
+
+  //METHODS///
+
+  //want to mimic "Find pete, hashcode num of pete, hashcode number then %5, if its not at :3: --> next entry until we find pete or null and return index
+  private int find(Object key) {
+    int index = key.hashCode() % table.length;
+    int count = 0;
+    if(index < 0) {
+      index = index + table.length; //index is between 0 - tablelength
+    }
+    while(table[index] != null && !key.equals(table[index].getKey())) {
+      count = count + 1;
+      index = (index + 1) % table.length; 
+      if(count>= table.length) {
+        return -1; //element was not there
+      }
+    }
+  
+    return index; //if we find element
+  }
+  
+
+  private void rehash() {
+    Entry<K,V>[] oldTable = table; //old array and make new table
+    start_capacity = 2 * start_capacity +1; //we want odd
+    this.table = new Entry[start_capacity];
+    numkeys = 0;
+    numDeletes = 0;
+    for(int i = 0 ;i < oldTable.length; i++) {
+      if((oldTable[i] != null) && !oldTable[i].equals(DELETED)) {
+        //want to take elements from old and put them into new table
+        int index = oldTable[i].getKey().hashCode() % table.length;
+        if(index < 0) {
+          index = index + table.length; //make sure index is between 0 and length
+        }
+        table[index] = new Entry<K,V>(oldTable[i].getKey(),oldTable[i].getValue());
+        //new entry with key and value of old table not equal to null
+        numkeys++;
+        loadFactor = (double) (numkeys) / table.length; 
+        
+      }
+    }
+  }
+
+
+  public V get(K key) {
+    int index = find(key);
+    if(index == -1 && table[index] == null) {
+      return null;
+    }
+    return table[index].getValue();
+  }
+
+  public V put(K key, V value) {
+    if(loadFactor > LOAD_THRESHOLD) {
+      this.rehash();
+    }
+    int index = this.find(key);
+    table[index] = new Entry<K,V>(key,value); //new value add to array
+    numkeys++;
+    loadFactor = (double) (numkeys)/table.length;
+     return value;
+  }
+
+  public boolean isEmpty() {
+     return size() == 0;
+  }
+
+  public V remove(K key) {
+    int index = this.find(key);
+    if(index == -1 && table[index] == null) {
+      return null;
+    }
+    V temp = table[index].getValue();
+    table[index] = DELETED;
+    this.numkeys--;
+    this.numDeletes++;
+     return temp;
+  }
+
+  public int size() {
+     return this.numkeys;
+  }
+
+  public String toString(){
+     String str = "";
+    str = str +String.format("|%6s|%15s|%18s|%15s|\n","-".repeat(6),"-".repeat(15),"-".repeat(18),"-".repeat(15));
+     str = str +String.format("|%6s|%15s|%15s%3d|%15s|\n","index","hashCode()","hashCode() mod",table.length,"Value");
+    str = str +String.format("|%6s|%15s|%18s|%15s|\n","-".repeat(6),"-".repeat(15),"-".repeat(18),"-".repeat(15));
+     for(int i = 0; i < table.length; i++){
+       if (table[i] == null){
+         str = str +String.format("|%6d|%15s|%18s|%15s|\n",i,"null","null","null");
+         str = str +String.format("|%6s|%15s|%18s|%15s|\n","-".repeat(6),"-".repeat(15),"-".repeat(18),"-".repeat(15));
+      }else{
+      str = str +String.format("|%6d|%15s|%18s|%15s|\n",i,table[i].getKey().hashCode(),table[i].getKey().hashCode()%table.length,table[i].getValue());
+       str = str +String.format("|%6s|%15s|%18s|%15s|\n","-".repeat(6),"-".repeat(15),"-".repeat(18),"-".repeat(15));
+      }
+    }
+    return str;
+   }
+
+
+  //////////////////////////////// ENTRY INNER CLASS ///////////
+
+  public static class Entry<K,V> {
+    // Map = {(k1,v1),k2,v2,k3,v3}}
+    //// data fields
+    private K key;
+    private V value; 
+    //can also do private K , V , W to make it 3-D
+
+    //////////////////////// CONSTRUCTORS ////////////////////////
+    public Entry(K key, V value) {
+      this.key= key;
+      this.value = value;
+    }
+
+    //getter and setter
+    public K getKey() {
+      return key;
+    }
+    public V getValue() {
+      return value;
+    }
+
+    public V setValue(V newValue) {
+      V oldValue = this.value;
+      this.value = newValue;
+      return oldValue;
+    }
+
+    @Override
+    public int hashCode() {
+      return this.key.hashCode() * this.value.hashCode();
+    }
+
+    @Override
+    public String toString() {
+      return this.getKey() + "=" + this.getValue();
+    }
+  }
+}
