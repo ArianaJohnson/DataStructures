@@ -5,3 +5,4 @@ Structues Include:
 - LinkedList
 - Stack
 - Binary Trees
+- Hash Table
